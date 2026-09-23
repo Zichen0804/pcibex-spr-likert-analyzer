@@ -14,7 +14,7 @@ Current version: **0.2.0**
 
 ## What it does
 
-The program reads a raw PCIbex/PennController results file and reconstructs participant sessions and trials from the event-level output.
+The main program reads a raw PCIbex/PennController results file and reconstructs participant sessions and trials from the event-level output.
 
 It then creates an anonymised Excel workbook containing five sheets:
 
@@ -75,9 +75,15 @@ or directly:
 pip install openpyxl
 ```
 
-## Usage
+## Main program
 
-Basic usage:
+The main analyser is:
+
+```text
+pcibex_spr_likert.py
+```
+
+### Basic usage
 
 ```bash
 python pcibex_spr_likert.py experiment_results.csv
@@ -230,7 +236,7 @@ Excluded participant values themselves are not stored in this sheet.
 
 ## SPR detection
 
-The program is designed primarily for PennController `DashedSentence` output.
+The main program is designed primarily for PennController `DashedSentence` output.
 
 It detects SPR events from the PennController event fields and reconstructs:
 
@@ -253,6 +259,112 @@ The program uses Python's built-in `csv` parser rather than manually splitting l
 
 This means quoted fields containing commas are handled correctly.
 
+## Optional tool: post-SPR timing extractor
+
+An additional utility is available in:
+
+```text
+optional_tools/post_spr_timing.py
+```
+
+This optional program focuses specifically on **what happens after the final SPR segment of each trial**.
+
+Instead of assuming that the next relevant event is a Likert judgment, it identifies the final SPR segment and extracts **every logged event that occurs afterwards within the same trial**.
+
+This can include, for example:
+
+- timers;
+- scale presentation events;
+- scale choices;
+- button events;
+- variable/log events;
+- controller events;
+- other custom events.
+
+### What it extracts
+
+For every SPR trial, the tool records:
+
+- the final SPR segment;
+- the final SPR segment's `EventTime`;
+- the final segment reading time;
+- every subsequent logged event;
+- the order of post-SPR events;
+- each event's controller, element type, element name, parameter, value, and `EventTime`;
+- elapsed time from the final SPR `EventTime`;
+- elapsed time from the estimated end of the final SPR segment;
+- automatically detected time-like logged variables.
+
+Time-like fields are discovered from their names rather than hard-coded for one experiment. Examples include fields containing terms such as:
+
+```text
+Reading Time
+RT
+Response Time
+Reaction Time
+Latency
+Duration
+Judgment Time
+Click Time
+Elapsed
+Timestamp
+```
+
+### Usage
+
+Run:
+
+```bash
+python optional_tools/post_spr_timing.py experiment_results.csv
+```
+
+This creates:
+
+```text
+post_spr_timing.xlsx
+```
+
+Or specify the output filename:
+
+```bash
+python optional_tools/post_spr_timing.py experiment_results.csv post_spr_results.xlsx
+```
+
+### Output sheets
+
+The optional tool produces:
+
+1. **Trials** — one row per SPR trial with final-segment and first/last post-SPR timing information.
+2. **Post_SPR_Events** — long-format output containing every event logged after the final SPR segment.
+3. **Time_Like_Fields** — automatically detected numeric fields whose names look time-related.
+4. **Variables** — retained experimental variables and privacy-excluded fields.
+5. **Diagnostic** — evidence about whether SPR `EventTime` appears to represent segment onset or segment completion.
+
+### Two timing interpretations
+
+Because `EventTime` behaviour can depend on how PennController logs a particular controller/version, the optional tool reports both:
+
+```text
+Delta_from_Final_SPR_EventTime_ms
+```
+
+and:
+
+```text
+Delta_from_Estimated_Final_SPR_End_ms
+```
+
+where:
+
+```text
+Estimated_Final_SPR_End =
+Final_SPR_EventTime + Final_SPR_RT
+```
+
+The `Diagnostic` sheet compares gaps between consecutive SPR `EventTime` values with logged reading times to help determine which interpretation is better supported by the actual dataset.
+
+The post-SPR timing utility is optional and is **not required** for the main SPR + Likert conversion workflow.
+
 ## Repository structure
 
 ```text
@@ -260,7 +372,9 @@ pcibex-spr-likert-analyzer/
 ├── pcibex_spr_likert.py
 ├── README.md
 ├── requirements.txt
-└── .gitignore
+├── .gitignore
+└── optional_tools/
+    └── post_spr_timing.py
 ```
 
 ## Important data-safety note
@@ -276,6 +390,8 @@ This repository's `.gitignore` excludes common data and spreadsheet formats by d
 *.xls
 ```
 
+It also excludes common result/output directories.
+
 Do not override those exclusions for real participant data unless you have a specific reason and appropriate permission to publish the data.
 
 ## Limitations
@@ -284,10 +400,12 @@ PCIbex and PennController experiments can be customised extensively. Version 0.2
 
 Automatic variable discovery cannot determine the scientific meaning of every logged field. Users should inspect the `Variables`, `Trials`, `Ratings`, and `SPR` sheets before beginning statistical analysis.
 
-Anonymisation here means that direct/common participant identifiers are suppressed from the generated workbook. Researchers remain responsible for assessing whether combinations of retained experimental variables could indirectly identify participants in their own dataset.
+The optional post-SPR timing tool similarly cannot infer the experimental meaning of every event after the final SPR segment. It therefore preserves post-SPR events broadly and leaves substantive interpretation to the researcher.
+
+Anonymisation here means that direct/common participant identifiers are suppressed from generated workbooks. Researchers remain responsible for assessing whether combinations of retained experimental variables could indirectly identify participants in their own dataset.
 
 ## Status
 
 Experimental research utility.
 
-The program has been designed to provide a reusable starting point for converting PCIbex/PennController SPR and Likert results into an anonymised, analysis-friendly format.
+The project is intended to provide a reusable starting point for converting PCIbex/PennController SPR and Likert results into anonymised, analysis-friendly formats, with an optional tool for more detailed post-SPR timing inspection.
