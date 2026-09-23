@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+
+# Experiment data and generated workbooks
+*.csv
+*.tsv
+*.xlsx
+*.xls
+
+# Potential raw/result folders
+data/
+results/
+output/
+outputs/
+
+# OS / editor files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
