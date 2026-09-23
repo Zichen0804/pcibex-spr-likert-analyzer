@@ -409,3 +409,7 @@ Anonymisation here means that direct/common participant identifiers are suppress
 Experimental research utility.
 
 The project is intended to provide a reusable starting point for converting PCIbex/PennController SPR and Likert results into anonymised, analysis-friendly formats, with an optional tool for more detailed post-SPR timing inspection.
+
+## License
+
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
